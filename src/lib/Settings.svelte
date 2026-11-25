@@ -4,6 +4,7 @@
   import { prefs, setPref, setCustomColor } from './prefs.svelte'
   import { DEFAULT_CUSTOM_COLORS, type ThemeMode } from './theme'
   import PwInput from './PwInput.svelte'
+  import { driveSync, connect as connectDrive, disconnect as disconnectDrive, syncNow as driveSyncNow } from './drive-sync.svelte'
 
   const THEME_OPTIONS: { v: ThemeMode; label: string }[] = [
     { v: 'system', label: '시스템 설정' },
@@ -146,7 +147,29 @@
       <div class="row"><button class="primary">합치기</button><button type="button" onclick={() => (backupFile = null)}>취소</button></div>
     </form>
   {/if}
-  <p class="muted small">Google Drive 자동 동기화는 다음 버전에서 추가돼요.</p>
+  <p class="muted small">기기 간 자동 동기화는 아래 "Google Drive 동기화"에서 설정할 수 있어요.</p>
+</section>
+
+<section class="card">
+  <h2>Google Drive 동기화</h2>
+  {#if !driveSync.configured}
+    <p class="muted small">아직 준비 중이에요. Google Cloud Console에서 OAuth 클라이언트 ID를 만들어야 켤 수 있어요.</p>
+  {:else if driveSync.status === 'disconnected'}
+    <p class="muted small">Google 계정에 연결하면 이 기록을 다른 기기와 맞출 수 있어요. 지금처럼 암호화된 채로만 올라가고, 비밀번호는 전송되지 않아요.</p>
+    <button class="primary" onclick={connectDrive}>Google 계정 연결</button>
+  {:else}
+    <p class="muted small">
+      {#if driveSync.status === 'connecting'}연결하는 중…
+      {:else if driveSync.status === 'syncing'}동기화하는 중…
+      {:else if driveSync.status === 'error'}문제가 있었어요: {driveSync.error}
+      {:else}연결됨{/if}
+      {#if driveSync.lastSynced}<br />마지막 동기화: {new Date(driveSync.lastSynced).toLocaleString('ko-KR')}{/if}
+    </p>
+    <div class="row">
+      <button onclick={driveSyncNow} disabled={driveSync.status === 'syncing' || driveSync.status === 'connecting'}>지금 동기화</button>
+      <button class="ghost" onclick={disconnectDrive}>연결 해제</button>
+    </div>
+  {/if}
 </section>
 
 <section class="card">
@@ -217,7 +240,7 @@
     <li><b>안드로이드</b>: Chrome 메뉴 → "홈 화면에 추가" 또는 "앱 설치"</li>
     <li><b>iPhone</b>: Safari 공유 버튼 → "홈 화면에 추가"</li>
   </ul>
-  <p class="muted small">기기마다 기록이 따로 저장돼요. 지금은 백업 파일로 옮기고, 다음 버전에서 Google Drive로 자동 동기화돼요.</p>
+  <p class="muted small">기기마다 기록이 따로 저장돼요. 백업 파일로 옮기거나, 위의 "Google Drive 동기화"를 켜면 자동으로 맞출 수 있어요.</p>
 </section>
 
 <section class="card danger-zone">

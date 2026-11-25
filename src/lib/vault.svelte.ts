@@ -36,6 +36,10 @@ export interface BackupFile {
 type Status = 'loading' | 'setup' | 'locked' | 'unlocked'
 
 let key: CryptoKey | null = null
+// Kept in memory only (never persisted) while unlocked, so Drive sync can re-wrap/merge a
+// remote backup without asking again mid-session. Cleared on lock, exactly like `key`.
+let sessionPassword: string | null = null
+export const getSessionPassword = () => sessionPassword
 
 export const vault = $state({ status: 'loading' as Status })
 export const entries = new SvelteMap<string, Entry>()
@@ -69,6 +73,7 @@ export async function setup(password: string): Promise<string> {
   }
   await db.putMeta(meta)
   key = await c.importDek(raw)
+  sessionPassword = password
   raw.fill(0)
   entries.clear()
   // status stays 'setup' until the user confirms they saved the recovery code
@@ -92,6 +97,7 @@ export async function unlock(password: string): Promise<boolean> {
     return false
   }
   key = await c.importDek(raw)
+  sessionPassword = password
   raw.fill(0)
   await loadEntries(key)
   vault.status = 'unlocked'
@@ -111,6 +117,7 @@ export async function recover(code: string, newPassword: string): Promise<boolea
   meta.password = await c.wrapDek(raw, newPassword)
   await db.putMeta(meta)
   key = await c.importDek(raw)
+  sessionPassword = newPassword
   raw.fill(0)
   await loadEntries(key)
   vault.status = 'unlocked'
@@ -128,6 +135,7 @@ export async function changePassword(oldPw: string, newPw: string): Promise<bool
     return false
   }
   await db.putMeta(meta)
+  sessionPassword = newPw
   return true
 }
 
@@ -138,6 +146,7 @@ export async function lock() {
     /* ignore */
   }
   key = null
+  sessionPassword = null
   entries.clear()
   vault.status = 'locked'
 }

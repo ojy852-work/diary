@@ -10,6 +10,7 @@
   import Icon from './lib/Icon.svelte'
   import { prefs } from './lib/prefs.svelte'
   import { applyTheme } from './lib/theme'
+  import { autoSyncIfConnected } from './lib/drive-sync.svelte'
 
   // runs regardless of lock state, so the lock screen also reflects the chosen theme
   $effect(() => {
@@ -76,6 +77,11 @@
   // after locking, start again from the calendar
   $effect(() => {
     if (vault.status === 'locked') tab = 'calendar'
+  })
+
+  // if Drive sync was turned on before, sync quietly each time the diary is unlocked
+  $effect(() => {
+    if (vault.status === 'unlocked') autoSyncIfConnected()
   })
 </script>
 
