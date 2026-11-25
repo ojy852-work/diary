@@ -8,6 +8,13 @@
   import Settings from './lib/Settings.svelte'
   import Calendar from './lib/Calendar.svelte'
   import Icon from './lib/Icon.svelte'
+  import { prefs } from './lib/prefs.svelte'
+  import { applyTheme } from './lib/theme'
+
+  // runs regardless of lock state, so the lock screen also reflects the chosen theme
+  $effect(() => {
+    applyTheme(prefs.themeMode, prefs.customColors)
+  })
 
   // the app opens on the month calendar; picking a day opens the entry page
   let tab = $state<'calendar' | 'diary' | 'search' | 'settings'>('calendar')

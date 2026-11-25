@@ -1,5 +1,7 @@
 // Display preferences kept in localStorage (not secret, so not encrypted).
 
+import { DEFAULT_CUSTOM_COLORS, type CustomColors, type ThemeMode } from './theme'
+
 function load<T>(key: string, fallback: T): T {
   try {
     const v = localStorage.getItem(key)
@@ -25,11 +27,19 @@ export const prefs = $state({
   /** When on, only a stylus draws; fingers scroll (palm rejection). */
   penOnly: load<boolean>('pref.penOnly', true),
   weekStart: load<0 | 1>('pref.weekStart', 0),
+  /** "system" follows the OS light/dark setting (default); "custom" uses customColors. */
+  themeMode: load<ThemeMode>('pref.themeMode', 'system'),
+  customColors: load<CustomColors>('pref.customColors', DEFAULT_CUSTOM_COLORS),
 })
 
 export function setPref<K extends keyof typeof prefs>(k: K, v: (typeof prefs)[K]) {
   prefs[k] = v
   save(`pref.${k}`, v)
+}
+
+export function setCustomColor(k: keyof CustomColors, v: string) {
+  prefs.customColors = { ...prefs.customColors, [k]: v }
+  save('pref.customColors', prefs.customColors)
 }
 
 export const PAST_YEAR_OPTIONS: { v: number; label: string }[] = [

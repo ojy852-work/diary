@@ -1,7 +1,24 @@
 <script lang="ts">
   import { entries, exportBackup, importBackup, importPlain, exportMarkdown, changePassword, wipeEverything, lock, type BackupFile } from './vault.svelte'
   import { todayKey, yearOf } from './dates'
-  import { prefs, setPref } from './prefs.svelte'
+  import { prefs, setPref, setCustomColor } from './prefs.svelte'
+  import { DEFAULT_CUSTOM_COLORS, type ThemeMode } from './theme'
+
+  const THEME_OPTIONS: { v: ThemeMode; label: string }[] = [
+    { v: 'system', label: '시스템 설정' },
+    { v: 'light', label: '라이트' },
+    { v: 'dark', label: '다크' },
+    { v: 'custom', label: '사용자 지정' },
+  ]
+  const COLOR_FIELDS: { k: keyof typeof DEFAULT_CUSTOM_COLORS; label: string }[] = [
+    { k: 'bg', label: '배경' },
+    { k: 'paper', label: '카드·작성 칸' },
+    { k: 'ink', label: '글자' },
+    { k: 'accent', label: '포인트' },
+  ]
+  function resetColors() {
+    for (const { k } of COLOR_FIELDS) setCustomColor(k, DEFAULT_CUSTOM_COLORS[k])
+  }
 
   let { autoLock = $bindable() }: { autoLock: number } = $props()
 
@@ -144,6 +161,27 @@
 </section>
 
 <section class="card">
+  <h2>테마</h2>
+  <p class="muted small">화면 배색을 직접 정할 수 있어요. 기본은 기기의 시스템 설정(라이트·다크)을 따라가요.</p>
+  <div class="seg" role="radiogroup" aria-label="테마">
+    {#each THEME_OPTIONS as o}
+      <button role="radio" aria-checked={prefs.themeMode === o.v} class={['segb', prefs.themeMode === o.v && 'on']} onclick={() => setPref('themeMode', o.v)}>{o.label}</button>
+    {/each}
+  </div>
+  {#if prefs.themeMode === 'custom'}
+    <div class="colors">
+      {#each COLOR_FIELDS as f}
+        <label class="colorpick">
+          <input type="color" value={prefs.customColors[f.k]} oninput={(e) => setCustomColor(f.k, e.currentTarget.value)} />
+          <span>{f.label}</span>
+        </label>
+      {/each}
+    </div>
+    <button class="small" onclick={resetColors}>기본값으로</button>
+  {/if}
+</section>
+
+<section class="card">
   <h2>손글씨 (펜 입력)</h2>
   <p class="muted small">태블릿 펜(Apple Pencil, S Pen, Windows 펜)으로 일기를 쓸 수 있어요. 필압을 인식하고, 손글씨도 글과 똑같이 암호화되어 저장·백업돼요. 아직 시험 단계예요.</p>
   <label class="check"><input type="checkbox" checked={prefs.ink} onchange={(e) => setPref('ink', e.currentTarget.checked)} /> 작성 화면에 손글씨 입력 켜기</label>
@@ -209,4 +247,11 @@
   code { font-size: 0.85em; background: var(--accent-soft); padding: 0 0.25rem; border-radius: 4px; }
   .ok { background: var(--accent-soft); padding: 0.6rem 0.9rem; border-radius: var(--radius); }
   .danger-zone { border-color: color-mix(in srgb, var(--danger) 40%, var(--line)); }
+  .seg { display: flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; width: fit-content; max-width: 100%; margin: 0.6rem 0; }
+  .segb { border: none; border-radius: 0; border-right: 1px solid var(--line); padding: 0.4rem 0.85rem; font-size: 0.88rem; background: var(--paper); }
+  .segb:last-child { border-right: none; }
+  .segb.on { background: var(--accent); color: var(--paper); font-weight: 600; }
+  .colors { display: flex; gap: 1.1rem; flex-wrap: wrap; margin: 0.7rem 0; }
+  .colorpick { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; font-size: 0.8rem; color: var(--muted); }
+  .colorpick input[type='color'] { width: 3rem; height: 2rem; padding: 0.15rem; cursor: pointer; }
 </style>
