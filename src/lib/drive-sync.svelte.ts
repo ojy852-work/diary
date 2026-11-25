@@ -8,7 +8,7 @@ import { exportBackup, importBackup, getSessionPassword, type BackupFile } from 
 // A public OAuth "Web application" client ID from https://console.cloud.google.com
 // (APIs & Services > Credentials). Not a secret — it is paired with an allow-list of
 // authorized JavaScript origins on Google's side, so it's fine to commit once you have one.
-export const GOOGLE_CLIENT_ID = '914529510994-7toi0v5qq7lv9v3se2a1f6i08sdb9roj.apps.googleusercontent.com'
+export const GOOGLE_CLIENT_ID = '778725502188-q0nn4uo7a2o6ob062pu0iolm3p3509jf.apps.googleusercontent.com'
 
 const SCOPE = 'https://www.googleapis.com/auth/drive.appdata'
 const FILE_NAME = 'mannyeon-diary-sync.json'
