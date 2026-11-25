@@ -1,6 +1,6 @@
 <script lang="ts">
   // Simple line icons (no emoji) so the UI stays calm and consistent on every platform.
-  let { name }: { name: 'calendar' | 'search' | 'settings' | 'lock' | 'back' | 'prev' | 'next' | 'pen' | 'text' | 'undo' | 'eraser' | 'trash' | 'sliders' } = $props()
+  let { name }: { name: 'calendar' | 'search' | 'settings' | 'lock' | 'back' | 'prev' | 'next' | 'pen' | 'text' | 'undo' | 'eraser' | 'trash' | 'sliders' | 'eye' | 'eye-off' } = $props()
 </script>
 
 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -30,5 +30,9 @@
     <path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13" />
   {:else if name === 'sliders'}
     <path d="M4 7h10M18 7h2M4 17h4M12 17h8" /><circle cx="16" cy="7" r="2" /><circle cx="10" cy="17" r="2" />
+  {:else if name === 'eye'}
+    <path d="M2 12c2.3-4.3 5.8-6.5 10-6.5s7.7 2.2 10 6.5c-2.3 4.3-5.8 6.5-10 6.5S4.3 16.3 2 12Z" /><circle cx="12" cy="12" r="2.6" />
+  {:else if name === 'eye-off'}
+    <path d="M3.3 3.3l17.4 17.4" /><path d="M9.9 5.6A10.6 10.6 0 0 1 12 5.5c4.2 0 7.7 2.2 10 6.5a16.6 16.6 0 0 1-3.2 4M6.4 6.9C4.5 8.2 3 10 2 12c2.3 4.3 5.8 6.5 10 6.5 1.3 0 2.5-.2 3.6-.6" /><path d="M14.4 14.4a2.6 2.6 0 0 1-3.7-3.7" />
   {/if}
 </svg>

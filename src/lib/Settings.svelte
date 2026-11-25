@@ -3,6 +3,7 @@
   import { todayKey, yearOf } from './dates'
   import { prefs, setPref, setCustomColor } from './prefs.svelte'
   import { DEFAULT_CUSTOM_COLORS, type ThemeMode } from './theme'
+  import PwInput from './PwInput.svelte'
 
   const THEME_OPTIONS: { v: ThemeMode; label: string }[] = [
     { v: 'system', label: '시스템 설정' },
@@ -141,7 +142,7 @@
   {#if backupFile}
     <form onsubmit={doRestore} class="stack">
       <p class="small">백업 파일의 기록 {backupFile.entries.filter((e) => !e.deleted).length}개. 백업을 만들 때의 비밀번호를 입력하세요.</p>
-      <input type="password" bind:value={backupPw} placeholder="백업 비밀번호" />
+      <PwInput bind:value={backupPw} placeholder="백업 비밀번호" />
       <div class="row"><button class="primary">합치기</button><button type="button" onclick={() => (backupFile = null)}>취소</button></div>
     </form>
   {/if}
@@ -201,9 +202,9 @@
     </select>
   </label>
   <form onsubmit={doChangePw} class="stack">
-    <input type="password" bind:value={oldPw} placeholder="지금 비밀번호" autocomplete="current-password" />
-    <input type="password" bind:value={newPw} placeholder="새 비밀번호" autocomplete="new-password" />
-    <input type="password" bind:value={newPw2} placeholder="새 비밀번호 확인" autocomplete="new-password" />
+    <PwInput bind:value={oldPw} placeholder="지금 비밀번호" autocomplete="current-password" />
+    <PwInput bind:value={newPw} placeholder="새 비밀번호" autocomplete="new-password" />
+    <PwInput bind:value={newPw2} placeholder="새 비밀번호 확인" autocomplete="new-password" />
     <button disabled={!oldPw || !newPw}>비밀번호 바꾸기</button>
   </form>
   <button class="full" onclick={lock}>지금 잠그기</button>

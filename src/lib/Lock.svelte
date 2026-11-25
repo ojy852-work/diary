@@ -1,5 +1,6 @@
 <script lang="ts">
   import { vault, setup, unlock, recover, finishSetup } from './vault.svelte'
+  import PwInput from './PwInput.svelte'
 
   let pw = $state('')
   let pw2 = $state('')
@@ -56,8 +57,8 @@
     {:else if vault.status === 'setup'}
       <p class="muted">처음 오셨네요. 일기를 암호화할 비밀번호를 정해주세요. 이 비밀번호는 어디에도 전송되지 않아요.</p>
       <form onsubmit={doSetup}>
-        <input type="password" placeholder="비밀번호 (8자 이상)" bind:value={pw} autocomplete="new-password" />
-        <input type="password" placeholder="비밀번호 확인" bind:value={pw2} autocomplete="new-password" />
+        <PwInput placeholder="비밀번호 (8자 이상)" bind:value={pw} autocomplete="new-password" />
+        <PwInput placeholder="비밀번호 확인" bind:value={pw2} autocomplete="new-password" />
         {#if err}<p class="error">{err}</p>{/if}
         <button class="primary full" disabled={busy}>{busy ? '만드는 중…' : '다이어리 만들기'}</button>
       </form>
@@ -65,16 +66,15 @@
       <p class="muted">복구 코드로 잠금을 풀고 새 비밀번호를 정해요.</p>
       <form onsubmit={doRecover}>
         <input type="text" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX" bind:value={code} autocomplete="off" spellcheck="false" />
-        <input type="password" placeholder="새 비밀번호" bind:value={pw} autocomplete="new-password" />
-        <input type="password" placeholder="새 비밀번호 확인" bind:value={pw2} autocomplete="new-password" />
+        <PwInput placeholder="새 비밀번호" bind:value={pw} autocomplete="new-password" />
+        <PwInput placeholder="새 비밀번호 확인" bind:value={pw2} autocomplete="new-password" />
         {#if err}<p class="error">{err}</p>{/if}
         <button class="primary full" disabled={busy}>{busy ? '확인 중…' : '복구하기'}</button>
       </form>
       <button class="ghost full small" onclick={() => ((mode = 'normal'), (err = ''))}>돌아가기</button>
     {:else}
       <form onsubmit={doUnlock}>
-        <!-- svelte-ignore a11y_autofocus -->
-        <input type="password" placeholder="비밀번호" bind:value={pw} autocomplete="current-password" autofocus />
+        <PwInput placeholder="비밀번호" bind:value={pw} autocomplete="current-password" autofocus />
         {#if err}<p class="error">{err}</p>{/if}
         <button class="primary full" disabled={busy || !pw}>{busy ? '여는 중…' : '열기'}</button>
       </form>
