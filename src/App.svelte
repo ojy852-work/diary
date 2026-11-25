@@ -11,6 +11,7 @@
   import { prefs } from './lib/prefs.svelte'
   import { applyTheme } from './lib/theme'
   import { autoSyncIfConnected } from './lib/drive-sync.svelte'
+  import { gate, initGate, renderSignInButton } from './lib/access-gate.svelte'
 
   // runs regardless of lock state, so the lock screen also reflects the chosen theme
   $effect(() => {
@@ -26,6 +27,12 @@
 
   onMount(() => {
     init()
+    initGate()
+  })
+
+  let gateBtnEl = $state<HTMLDivElement>()
+  $effect(() => {
+    if (gate.status === 'signed_out' && gateBtnEl) renderSignInButton(gateBtnEl)
   })
 
   // auto-lock after inactivity, and when the app has been in the background too long
@@ -87,7 +94,22 @@
 
 <svelte:window onpointerdown={touch} onkeydown={touch} />
 
-{#if vault.status === 'loading'}
+{#if gate.status === 'checking'}
+  <div></div>
+{:else if gate.status !== 'approved'}
+  <div class="gate">
+    <div class="card">
+      <span class="icon">📔</span>
+      <h1>만년 다이어리</h1>
+      {#if gate.status === 'denied'}
+        <p class="deny">{gate.email || '이 계정'}은(는) 허용되지 않았어요. 관리자에게 문의해주세요.</p>
+      {:else}
+        <p>초대받은 사람만 사용할 수 있어요. Google 계정으로 로그인해서 확인해주세요.</p>
+      {/if}
+      <div bind:this={gateBtnEl}></div>
+    </div>
+  </div>
+{:else if vault.status === 'loading'}
   <div></div>
 {:else if vault.status !== 'unlocked'}
   <Lock />
@@ -117,6 +139,13 @@
 {/if}
 
 <style>
+  .gate { max-width: 360px; margin: 18vh auto 0; padding: 0 16px; text-align: center; }
+  .gate .card { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 2rem 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.9rem; }
+  .gate .icon { font-size: 2rem; }
+  .gate h1 { font-family: var(--serif); font-size: 1.2rem; margin: 0; }
+  .gate p { color: var(--muted); font-size: 0.92rem; line-height: 1.5; margin: 0; }
+  .gate .deny { color: var(--danger); }
+
   .shell { max-width: 880px; margin: 0 auto; padding: 0 16px calc(88px + env(safe-area-inset-bottom)); }
   .top { display: flex; justify-content: space-between; align-items: center; padding: calc(0.8rem + env(safe-area-inset-top)) 0 0.7rem; border-bottom: 1px solid var(--line); margin-bottom: 0.9rem; }
   .brand { font-family: var(--serif); font-weight: 700; font-size: 1.1rem; letter-spacing: 0.02em; }

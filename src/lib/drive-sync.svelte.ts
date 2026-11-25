@@ -4,6 +4,7 @@
 // Drive). Signing in only tells us "whose folder this is" — it can't be used to read a
 // single diary entry without the diary password too.
 import { exportBackup, importBackup, getSessionPassword, type BackupFile } from './vault.svelte'
+import { loadGis } from './google-identity'
 
 // A public OAuth "Web application" client ID from https://console.cloud.google.com
 // (APIs & Services > Credentials). Not a secret — it is paired with an allow-list of
@@ -21,24 +22,6 @@ export const driveSync = $state({
   error: '',
   lastSynced: Number(localStorage.getItem(LAST_SYNCED_KEY) || 0) || null,
 })
-
-declare global {
-  interface Window { google?: any }
-}
-
-let gisLoaded: Promise<void> | null = null
-function loadGis(): Promise<void> {
-  gisLoaded ??= new Promise((resolve, reject) => {
-    if (window.google?.accounts?.oauth2) return resolve()
-    const s = document.createElement('script')
-    s.src = 'https://accounts.google.com/gsi/client'
-    s.async = true
-    s.onload = () => resolve()
-    s.onerror = () => reject(new Error('Google 로그인 스크립트를 불러오지 못했어요.'))
-    document.head.appendChild(s)
-  })
-  return gisLoaded
-}
 
 let tokenClient: any = null
 let accessToken: string | null = null
