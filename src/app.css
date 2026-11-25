@@ -1,15 +1,19 @@
 :root {
-  --bg: #f6f1e7;
-  --paper: #fffdf8;
-  --ink: #2b2520;
-  --muted: #7d7266;
-  --line: #e4dccd;
-  --accent: #8a5a2b;
-  --accent-soft: #f0e3cf;
-  --gold: #d9a441;
+  --bg: #f3f4f6;
+  --paper: #ffffff;
+  --ink: #1f2328;
+  --muted: #646b75;
+  --line: #d9dde3;
+  --line-soft: #eceef1;
+  --accent: #1f3a5f;
+  --accent-soft: #e8edf4;
+  --mark: #9a7b4f;
+  --sun: #b0413e;
+  --sat: #2f5b9a;
   --danger: #b0413e;
-  --shadow: 0 1px 2px rgb(60 40 20 / 0.06), 0 4px 16px rgb(60 40 20 / 0.06);
-  --radius: 14px;
+  --shadow: 0 1px 2px rgb(20 30 45 / 0.06);
+  --radius: 6px;
+  --serif: 'Noto Serif KR', 'Nanum Myeongjo', 'Batang', '바탕', 'AppleMyungjo', serif;
   color-scheme: light;
   font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', system-ui, sans-serif;
   font-size: 16px;
@@ -20,14 +24,17 @@
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #1c1a17;
-    --paper: #26231f;
-    --ink: #ece5d8;
-    --muted: #a39887;
-    --line: #3a352e;
-    --accent: #d9a46a;
-    --accent-soft: #3a2f22;
-    --gold: #d9a441;
+    --bg: #16181c;
+    --paper: #1f2227;
+    --ink: #e6e8eb;
+    --muted: #9aa1ab;
+    --line: #353a42;
+    --line-soft: #2a2e34;
+    --accent: #9db8dc;
+    --accent-soft: #263345;
+    --mark: #c9a874;
+    --sun: #e0716d;
+    --sat: #8fb0e0;
     --danger: #e0716d;
     --shadow: 0 1px 2px rgb(0 0 0 / 0.3);
     color-scheme: dark;
@@ -41,8 +48,8 @@ button {
   cursor: pointer;
   border: 1px solid var(--line);
   background: var(--paper);
-  border-radius: 10px;
-  padding: 0.5rem 0.9rem;
+  border-radius: var(--radius);
+  padding: 0.45rem 0.9rem;
   transition: background 0.15s, border-color 0.15s;
 }
 button:hover { border-color: var(--accent); }
@@ -50,16 +57,18 @@ button:disabled { opacity: 0.5; cursor: default; }
 button.primary { background: var(--accent); border-color: var(--accent); color: var(--paper); font-weight: 600; }
 button.ghost { border-color: transparent; background: transparent; }
 button.danger { color: var(--danger); border-color: var(--danger); }
-input[type='password'], input[type='text'], input[type='search'], input[type='date'], select, textarea {
+input[type='password'], input[type='text'], input[type='search'], input[type='date'], input[type='month'], select, textarea {
   width: 100%;
   border: 1px solid var(--line);
   background: var(--paper);
-  border-radius: 10px;
-  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius);
+  padding: 0.55rem 0.8rem;
   outline: none;
 }
 input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
 .muted { color: var(--muted); }
 .small { font-size: 0.85rem; }
 .error { color: var(--danger); font-size: 0.9rem; }
+.icon { width: 1.15em; height: 1.15em; vertical-align: -0.2em; flex: none; }

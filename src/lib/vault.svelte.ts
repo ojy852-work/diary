@@ -4,15 +4,26 @@ import { SvelteMap } from 'svelte/reactivity'
 import * as c from './crypto'
 import * as db from './db'
 import type { EncryptedEntry, VaultMeta } from './db'
+import { hasInk, type InkPage } from './ink/model'
 
 export interface Entry {
   date: string
   text: string
   mood: string
+  /** handwriting page (pen input); absent when the day has none */
+  ink?: InkPage
   updatedAt: number
 }
 
-interface Payload { text: string; mood: string }
+interface Payload { text: string; mood: string; ink?: InkPage }
+
+const fromPayload = (date: string, p: Payload, updatedAt: number): Entry => ({
+  date,
+  text: p.text ?? '',
+  mood: p.mood ?? '',
+  ...(hasInk(p.ink) ? { ink: p.ink } : {}),
+  updatedAt,
+})
 
 export interface BackupFile {
   format: 'mannyeon-backup'
@@ -40,7 +51,7 @@ async function loadEntries(k: CryptoKey) {
   for (const r of rows) {
     if (r.deleted) continue
     const p = await c.openJson<Payload>(k, r)
-    out.push({ date: r.date, text: p.text, mood: p.mood ?? '', updatedAt: r.updatedAt })
+    out.push(fromPayload(r.date, p, r.updatedAt))
   }
   entries.clear()
   for (const e of out) entries.set(e.date, e)
@@ -131,10 +142,11 @@ export async function lock() {
   vault.status = 'locked'
 }
 
-export async function saveEntry(date: string, text: string, mood: string) {
+export async function saveEntry(date: string, text: string, mood: string, ink?: InkPage | null) {
   if (!key) throw new Error('locked')
   const updatedAt = Date.now()
-  if (!text.trim() && !mood) {
+  const inkOk = hasInk(ink)
+  if (!text.trim() && !mood && !inkOk) {
     // empty entry = delete (tombstone kept for future sync)
     if (!entries.has(date)) return
     const sealed = await c.sealJson(key, { text: '', mood: '' })
@@ -142,9 +154,10 @@ export async function saveEntry(date: string, text: string, mood: string) {
     entries.delete(date)
     return
   }
-  const sealed = await c.sealJson(key, { text, mood } satisfies Payload)
+  const payload: Payload = inkOk ? { text, mood, ink } : { text, mood }
+  const sealed = await c.sealJson(key, payload)
   await db.putEntry({ date, ...sealed, updatedAt })
-  entries.set(date, { date, text, mood, updatedAt })
+  entries.set(date, fromPayload(date, payload, updatedAt))
 }
 
 // ---------- backup / import / export ----------
@@ -193,7 +206,7 @@ export async function importBackup(file: BackupFile, password: string): Promise<
     }
     const p = await c.openJson<Payload>(theirKey, r)
     toWrite.push({ ...(await c.sealJson(key, p)), date: r.date, updatedAt: r.updatedAt })
-    entries.set(r.date, { date: r.date, text: p.text, mood: p.mood ?? '', updatedAt: r.updatedAt })
+    entries.set(r.date, fromPayload(r.date, p, r.updatedAt))
     if (mine && !mine.deleted) updated++
     else added++
   }
@@ -241,7 +254,7 @@ export async function importPlain(content: string): Promise<number> {
   for (const [date, text] of found) {
     const prev = entries.get(date)
     if (prev?.text.includes(text)) continue
-    await saveEntry(date, prev?.text ? `${prev.text}\n\n${text}` : text, prev?.mood || moods.get(date) || '')
+    await saveEntry(date, prev?.text ? `${prev.text}\n\n${text}` : text, prev?.mood || moods.get(date) || '', prev?.ink)
     n++
   }
   return n
@@ -254,7 +267,9 @@ function normalizeDate(s: string): string | null {
 
 export function exportMarkdown(): string {
   const sorted = [...entries.values()].sort((a, b) => a.date.localeCompare(b.date))
-  return sorted.map((e) => `## ${e.date}${e.mood ? ` ${e.mood}` : ''}\n\n${e.text.trim()}\n`).join('\n')
+  return sorted
+    .map((e) => `## ${e.date}${e.mood ? ` ${e.mood}` : ''}\n\n${e.text.trim()}${e.ink ? `${e.text.trim() ? '\n\n' : ''}(손글씨 ${e.ink.strokes.length}획: 백업 파일에만 들어 있어요)` : ''}\n`)
+    .join('\n')
 }
 
 export async function wipeEverything() {

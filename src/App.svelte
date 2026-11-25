@@ -6,9 +6,13 @@
   import Diary from './lib/Diary.svelte'
   import Search from './lib/Search.svelte'
   import Settings from './lib/Settings.svelte'
+  import Calendar from './lib/Calendar.svelte'
+  import Icon from './lib/Icon.svelte'
 
-  let tab = $state<'diary' | 'search' | 'settings'>('diary')
+  // the app opens on the month calendar; picking a day opens the entry page
+  let tab = $state<'calendar' | 'diary' | 'search' | 'settings'>('calendar')
   let date = $state(todayKey())
+  let month = $state(todayKey().slice(0, 7))
   let autoLock = $state(Number(localStorage.getItem('autoLock') || 5))
   $effect(() => localStorage.setItem('autoLock', String(autoLock)))
 
@@ -54,7 +58,18 @@
   function pick(d: string) {
     date = d
     tab = 'diary'
+    scrollTo(0, 0)
   }
+
+  function backToCalendar() {
+    month = date.slice(0, 7)
+    tab = 'calendar'
+  }
+
+  // after locking, start again from the calendar
+  $effect(() => {
+    if (vault.status === 'locked') tab = 'calendar'
+  })
 </script>
 
 <svelte:window onpointerdown={touch} onkeydown={touch} />
@@ -66,17 +81,19 @@
 {:else}
   <div class="shell">
     <header class="top">
-      <span class="brand">📖 만년 다이어리</span>
+      <span class="brand">만년 다이어리</span>
       <nav class="tabs">
-        <button class={['tab', tab === 'diary' && 'on']} onclick={() => (tab = 'diary')}><span class="ic">📅</span><span>일기</span></button>
-        <button class={['tab', tab === 'search' && 'on']} onclick={() => (tab = 'search')}><span class="ic">🔍</span><span>검색</span></button>
-        <button class={['tab', tab === 'settings' && 'on']} onclick={() => (tab = 'settings')}><span class="ic">⚙️</span><span>설정</span></button>
-        <button class="tab lockbtn" onclick={lock} title="잠그기"><span class="ic">🔒</span><span>잠금</span></button>
+        <button class={['tab', (tab === 'calendar' || tab === 'diary') && 'on']} onclick={() => (tab === 'diary' ? backToCalendar() : (tab = 'calendar'))}><span class="ic"><Icon name="calendar" /></span><span>달력</span></button>
+        <button class={['tab', tab === 'search' && 'on']} onclick={() => (tab = 'search')}><span class="ic"><Icon name="search" /></span><span>검색</span></button>
+        <button class={['tab', tab === 'settings' && 'on']} onclick={() => (tab = 'settings')}><span class="ic"><Icon name="settings" /></span><span>설정</span></button>
+        <button class="tab lockbtn" onclick={lock} title="잠그기"><span class="ic"><Icon name="lock" /></span><span>잠금</span></button>
       </nav>
     </header>
     <main>
-      {#if tab === 'diary'}
-        <Diary bind:date />
+      {#if tab === 'calendar'}
+        <Calendar bind:month onpick={pick} />
+      {:else if tab === 'diary'}
+        <Diary bind:date onback={backToCalendar} />
       {:else if tab === 'search'}
         <Search onpick={pick} />
       {:else}
@@ -87,12 +104,13 @@
 {/if}
 
 <style>
-  .shell { max-width: 720px; margin: 0 auto; padding: 0 16px calc(88px + env(safe-area-inset-bottom)); }
-  .top { display: flex; justify-content: space-between; align-items: center; padding: calc(0.8rem + env(safe-area-inset-top)) 0 0.6rem; }
-  .brand { font-weight: 700; letter-spacing: -0.02em; }
+  .shell { max-width: 880px; margin: 0 auto; padding: 0 16px calc(88px + env(safe-area-inset-bottom)); }
+  .top { display: flex; justify-content: space-between; align-items: center; padding: calc(0.8rem + env(safe-area-inset-top)) 0 0.7rem; border-bottom: 1px solid var(--line); margin-bottom: 0.9rem; }
+  .brand { font-family: var(--serif); font-weight: 700; font-size: 1.1rem; letter-spacing: 0.02em; }
   .tabs { display: flex; gap: 0.25rem; }
   .tab { border-color: transparent; background: transparent; display: flex; gap: 0.35rem; align-items: center; color: var(--muted); padding: 0.4rem 0.7rem; }
   .tab.on { color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+  .ic { display: inline-flex; }
   main { padding-top: 0.4rem; }
   @media (max-width: 640px) {
     .top { justify-content: center; }
@@ -103,8 +121,8 @@
       justify-content: space-around; padding: 0.3rem 0 calc(0.3rem + env(safe-area-inset-bottom));
     }
     .tab { flex-direction: column; gap: 0; font-size: 0.75rem; padding: 0.3rem 1rem; }
-    .tab .ic { font-size: 1.25rem; }
+    .tab .ic { font-size: 1.3rem; }
     .tab.on { background: transparent; }
-    .top { padding: env(safe-area-inset-top) 0 0; }
+    .top { padding: env(safe-area-inset-top) 0 0; border-bottom: none; margin-bottom: 0.4rem; }
   }
 </style>

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { entries, exportBackup, importBackup, importPlain, exportMarkdown, changePassword, wipeEverything, lock, type BackupFile } from './vault.svelte'
   import { todayKey, yearOf } from './dates'
+  import { prefs, setPref } from './prefs.svelte'
 
   let { autoLock = $bindable() }: { autoLock: number } = $props()
 
@@ -143,6 +144,13 @@
 </section>
 
 <section class="card">
+  <h2>손글씨 (펜 입력)</h2>
+  <p class="muted small">태블릿 펜(Apple Pencil, S Pen, Windows 펜)으로 일기를 쓸 수 있어요. 필압을 인식하고, 손글씨도 글과 똑같이 암호화되어 저장·백업돼요. 아직 시험 단계예요.</p>
+  <label class="check"><input type="checkbox" checked={prefs.ink} onchange={(e) => setPref('ink', e.currentTarget.checked)} /> 작성 화면에 손글씨 입력 켜기</label>
+  <label class="check"><input type="checkbox" checked={prefs.penOnly} disabled={!prefs.ink} onchange={(e) => setPref('penOnly', e.currentTarget.checked)} /> 펜으로만 쓰기 (손바닥·손가락 터치 무시)</label>
+</section>
+
+<section class="card">
   <h2>보안</h2>
   <label class="inline">
     자동 잠금
@@ -189,14 +197,16 @@
   .row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; margin: 0.6rem 0; }
   .row input { flex: 1; min-width: 8rem; }
   .stack { display: grid; gap: 0.5rem; margin: 0.8rem 0; }
-  .filebtn { border: 1px solid var(--line); border-radius: 10px; padding: 0.5rem 0.9rem; cursor: pointer; background: var(--paper); }
+  .filebtn { border: 1px solid var(--line); border-radius: var(--radius); padding: 0.5rem 0.9rem; cursor: pointer; background: var(--paper); }
   .filebtn:hover { border-color: var(--accent); }
   .filebtn input { display: none; }
   .inline { display: flex; align-items: center; gap: 0.8rem; white-space: nowrap; }
   .inline select { width: auto; }
   .full { width: 100%; }
+  .check { display: flex; gap: 0.5rem; align-items: center; margin: 0.4rem 0; }
+  .check input { width: auto; }
   ul { padding-left: 1.2rem; margin: 0.3rem 0; }
   code { font-size: 0.85em; background: var(--accent-soft); padding: 0 0.25rem; border-radius: 4px; }
-  .ok { background: var(--accent-soft); padding: 0.6rem 0.9rem; border-radius: 10px; }
+  .ok { background: var(--accent-soft); padding: 0.6rem 0.9rem; border-radius: var(--radius); }
   .danger-zone { border-color: color-mix(in srgb, var(--danger) 40%, var(--line)); }
 </style>

@@ -45,7 +45,7 @@
 
 <main class="wrap">
   <div class="card box">
-    <div class="logo" aria-hidden="true">📖</div>
+    <svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="10" fill="var(--accent)"/><rect x="16" y="12" width="32" height="40" rx="2" fill="var(--paper)"/><path d="M22 22h20M22 29h20M22 36h13" stroke="var(--accent)" stroke-width="2.5"/><rect x="16" y="12" width="4" height="40" fill="var(--mark)"/></svg>
     <h1>만년 다이어리</h1>
 
     {#if recoveryCode}
@@ -87,14 +87,14 @@
 <style>
   .wrap { min-height: 100dvh; display: grid; place-content: center; padding: 1rem; }
   .box { width: min(380px, calc(100vw - 2rem)); padding: 2rem 1.5rem; text-align: center; }
-  .logo { font-size: 2.5rem; }
-  h1 { margin: 0.25rem 0 1rem; font-size: 1.5rem; letter-spacing: -0.02em; }
+  .logo { width: 48px; height: 48px; }
+  h1 { margin: 0.5rem 0 1rem; font-family: var(--serif); font-size: 1.5rem; letter-spacing: 0.01em; }
   form { display: grid; gap: 0.6rem; margin-top: 1rem; }
   .full { width: 100%; margin-top: 0.4rem; }
   .code {
     font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
     font-size: 1.1rem; letter-spacing: 0.05em;
-    background: var(--accent-soft); border-radius: 10px; padding: 0.8rem; margin: 1rem 0; user-select: all;
+    background: var(--accent-soft); border-radius: var(--radius); padding: 0.8rem; margin: 1rem 0; user-select: all;
   }
   .check { display: flex; gap: 0.5rem; align-items: center; justify-content: center; margin-bottom: 0.5rem; }
   .foot { text-align: center; margin-top: 1rem; }

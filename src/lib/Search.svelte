@@ -61,7 +61,7 @@
 <style>
   h3 { margin: 1.2rem 0 0.4rem; font-weight: 500; }
   .tags { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-  .tag { border-radius: 999px; padding: 0.2rem 0.7rem; font-size: 0.9rem; color: var(--accent); }
+  .tag { border-radius: 3px; padding: 0.2rem 0.7rem; font-size: 0.9rem; color: var(--accent); }
   .hint { margin-top: 2rem; text-align: center; }
   .row { display: grid; gap: 0.2rem; width: 100%; text-align: left; padding: 0.8rem 1rem; margin-bottom: 0.5rem; }
   .date { font-weight: 600; font-size: 0.95rem; }
