@@ -1,8 +1,29 @@
 apply plugin: 'com.android.application'
 
+// Signs debug builds with a stable keystore instead of Gradle's auto-generated one, which is
+// regenerated fresh on every CI run and would invalidate Google Sign-In's registered SHA-1 on
+// every single build. Written by CI from a secret (see .github/workflows/build.yml); absent
+// locally, so local `npx cap run android` etc. still fall back to the normal debug keystore.
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+def hasStableKeystore = keystorePropertiesFile.exists()
+if (hasStableKeystore) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "app.mannyeon.diary"
     compileSdk = rootProject.ext.compileSdkVersion
+    if (hasStableKeystore) {
+        signingConfigs {
+            debug {
+                storeFile rootProject.file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
     defaultConfig {
         applicationId "app.mannyeon.diary"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -17,6 +38,11 @@ android {
         }
     }
     buildTypes {
+        debug {
+            if (hasStableKeystore) {
+                signingConfig signingConfigs.debug
+            }
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'

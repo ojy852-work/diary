@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 *.mdiary
 dist-single
+
+# Android signing (never commit the keystore or its passwords; CI writes these from secrets)
+android/app/release.keystore
+android/keystore.properties
