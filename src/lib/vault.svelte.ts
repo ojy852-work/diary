@@ -5,6 +5,7 @@ import * as c from './crypto'
 import * as db from './db'
 import type { EncryptedEntry, VaultMeta } from './db'
 import { hasInk, type InkPage } from './ink/model'
+import { snapshotPrefs, applyPrefsSnapshot, type PrefsSnapshot } from './prefs.svelte'
 
 export interface Entry {
   date: string
@@ -31,6 +32,9 @@ export interface BackupFile {
   exportedAt: string
   vault: VaultMeta
   entries: EncryptedEntry[]
+  /** Display prefs (theme, view settings, ...). Not secret, so kept in plain alongside the
+   *  encrypted entries — lets Drive sync carry them between devices on the same account. */
+  prefs?: PrefsSnapshot
 }
 
 type Status = 'loading' | 'setup' | 'locked' | 'unlocked'
@@ -71,6 +75,7 @@ export async function seedFromRemote(file: BackupFile): Promise<boolean> {
   if (file?.format !== 'mannyeon-backup') return false
   await db.putMeta(file.vault)
   await db.putEntries(file.entries)
+  applyPrefsSnapshot(file.prefs)
   return true
 }
 
@@ -221,6 +226,7 @@ export async function exportBackup(): Promise<BackupFile> {
     exportedAt: new Date().toISOString(),
     vault: meta,
     entries: await db.getAllEntries(),
+    prefs: snapshotPrefs(),
   }
 }
 
@@ -261,6 +267,7 @@ export async function importBackup(file: BackupFile, password: string): Promise<
     else added++
   }
   await db.putEntries(toWrite)
+  applyPrefsSnapshot(file.prefs)
   return { added, updated }
 }
 

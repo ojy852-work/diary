@@ -1,8 +1,25 @@
 <script lang="ts">
   import { entries } from './vault.svelte'
-  import { prefs, setPref, PAST_YEAR_OPTIONS } from './prefs.svelte'
+  import { prefs, setPref, setCustomColor, PAST_YEAR_OPTIONS } from './prefs.svelte'
+  import { DEFAULT_CUSTOM_COLORS, type ThemeMode } from './theme'
   import Icon from './Icon.svelte'
   import * as d from './dates'
+
+  const THEME_OPTIONS: { v: ThemeMode; label: string }[] = [
+    { v: 'system', label: '시스템 설정' },
+    { v: 'light', label: '라이트' },
+    { v: 'dark', label: '다크' },
+    { v: 'custom', label: '사용자 지정' },
+  ]
+  const COLOR_FIELDS: { k: keyof typeof DEFAULT_CUSTOM_COLORS; label: string }[] = [
+    { k: 'bg', label: '배경' },
+    { k: 'paper', label: '카드·작성 칸' },
+    { k: 'ink', label: '글자' },
+    { k: 'accent', label: '포인트' },
+  ]
+  function resetColors() {
+    for (const { k } of COLOR_FIELDS) setCustomColor(k, DEFAULT_CUSTOM_COLORS[k])
+  }
 
   let { month = $bindable(), onpick }: { month: string; onpick: (date: string) => void } = $props()
 
@@ -122,6 +139,25 @@
         <button role="radio" aria-checked={prefs.weekStart === 1} class={['segb', prefs.weekStart === 1 && 'on']} onclick={() => setPref('weekStart', 1)}>월요일</button>
       </div>
     </div>
+    <div class="opt">
+      <div class="lbl"><b>테마</b></div>
+      <div class="seg" role="radiogroup" aria-label="테마">
+        {#each THEME_OPTIONS as o}
+          <button role="radio" aria-checked={prefs.themeMode === o.v} class={['segb', prefs.themeMode === o.v && 'on']} onclick={() => setPref('themeMode', o.v)}>{o.label}</button>
+        {/each}
+      </div>
+      {#if prefs.themeMode === 'custom'}
+        <div class="colors">
+          {#each COLOR_FIELDS as f}
+            <label class="colorpick">
+              <input type="color" value={prefs.customColors[f.k]} oninput={(e) => setCustomColor(f.k, e.currentTarget.value)} />
+              <span>{f.label}</span>
+            </label>
+          {/each}
+        </div>
+        <button class="small" onclick={resetColors}>기본값으로</button>
+      {/if}
+    </div>
   </section>
 {/if}
 
@@ -173,6 +209,9 @@
   .segb { border: none; border-radius: 0; border-right: 1px solid var(--line); padding: 0.35rem 0.75rem; font-size: 0.88rem; background: var(--paper); }
   .segb:last-child { border-right: none; }
   .segb.on { background: var(--accent); color: var(--paper); font-weight: 600; }
+  .colors { display: flex; gap: 1.1rem; flex-wrap: wrap; margin: 0.6rem 0 0.4rem; }
+  .colorpick { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; font-size: 0.8rem; color: var(--muted); }
+  .colorpick input[type='color'] { width: 3rem; height: 2rem; padding: 0.15rem; cursor: pointer; }
   .cal { overflow: hidden; }
   .row.week, .grid { display: grid; grid-template-columns: repeat(7, 1fr); }
   .wd { text-align: center; font-size: 0.8rem; color: var(--muted); padding: 0.45rem 0; border-bottom: 1px solid var(--line); background: var(--line-soft); font-weight: 600; }

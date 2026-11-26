@@ -162,24 +162,23 @@
   .gate .google-btn:disabled { opacity: 0.6; }
 
   .shell { max-width: 880px; margin: 0 auto; padding: 0 16px calc(88px + env(safe-area-inset-bottom)); }
-  .top { display: flex; justify-content: space-between; align-items: center; padding: calc(0.8rem + env(safe-area-inset-top)) 0 0.7rem; border-bottom: 1px solid var(--line); margin-bottom: 0.9rem; }
+  .top { display: flex; justify-content: flex-start; align-items: center; padding: env(safe-area-inset-top) 0 0; margin-bottom: 0.4rem; }
   .brand { font-family: var(--serif); font-weight: 700; font-size: 1.1rem; letter-spacing: 0.02em; }
-  .tabs { display: flex; gap: 0.25rem; }
-  .tab { border-color: transparent; background: transparent; display: flex; gap: 0.35rem; align-items: center; color: var(--muted); padding: 0.4rem 0.7rem; }
-  .tab.on { color: var(--accent); background: var(--accent-soft); font-weight: 600; }
   .ic { display: inline-flex; }
   main { padding-top: 0.4rem; }
-  @media (max-width: 640px) {
-    .top { justify-content: center; }
-    .brand { display: none; }
-    .tabs {
-      position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
-      background: var(--paper); border-top: 1px solid var(--line);
-      justify-content: space-around; padding: 0.3rem 0 calc(0.3rem + env(safe-area-inset-bottom));
-    }
-    .tab { flex-direction: column; gap: 0; font-size: 0.75rem; padding: 0.3rem 1rem; }
-    .tab .ic { font-size: 1.3rem; }
-    .tab.on { background: transparent; }
-    .top { padding: env(safe-area-inset-top) 0 0; border-bottom: none; margin-bottom: 0.4rem; }
+
+  /* Nav always stays fixed to the bottom, regardless of window size, so it doesn't jump
+     to the top on a wide (e.g. installed desktop app) window. */
+  .tabs {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
+    display: flex; justify-content: space-around; max-width: 480px; margin: 0 auto;
+    background: var(--paper); border-top: 1px solid var(--line);
+    padding: 0.3rem 0 calc(0.3rem + env(safe-area-inset-bottom));
   }
+  .tab {
+    border-color: transparent; background: transparent; color: var(--muted);
+    display: flex; flex-direction: column; gap: 0; align-items: center; font-size: 0.75rem; padding: 0.3rem 1rem;
+  }
+  .tab .ic { font-size: 1.3rem; }
+  .tab.on { color: var(--accent); background: transparent; font-weight: 600; }
 </style>

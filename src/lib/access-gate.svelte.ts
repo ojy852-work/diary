@@ -7,7 +7,7 @@
 // The same Google sign-in also grants Drive access (one consent covers both), so a brand
 // new device/browser can recognize "this account already has a diary" and ask for the
 // existing password instead of offering to start a new one — see seedFromRemote below.
-import { ensureToken, fetchRemoteBackup, markConnectedWithToken, GOOGLE_CLIENT_ID } from './drive-sync.svelte'
+import { ensureToken, fetchRemoteBackup, markConnectedWithToken, wasConnected, driveSync, GOOGLE_CLIENT_ID } from './drive-sync.svelte'
 import { seedFromRemote } from './vault.svelte'
 import { ALLOWED_EMAILS } from './allowlist'
 
@@ -68,6 +68,20 @@ export async function signIn() {
   }
 }
 
+/** Re-establishes a Drive token quietly (no popup) on a "already signed in" return visit, so
+ *  Settings shows Drive as connected — and syncing works — without the user ever pressing
+ *  "Google 계정 연결" again. Only runs if Drive was ever connected on this device before;
+ *  if it fails (consent lapsed, offline, ...) Settings still has that button as a fallback. */
+async function reconnectDriveSilently() {
+  if (!driveSync.configured || driveSync.status === 'connected' || !wasConnected()) return
+  try {
+    const token = await ensureToken(false)
+    markConnectedWithToken(token)
+  } catch {
+    // leave it disconnected; the user can still press "Google 계정 연결" in Settings
+  }
+}
+
 export async function initGate() {
   // not configured (no client ID set up yet): don't block local development
   if (!GOOGLE_CLIENT_ID) {
@@ -78,6 +92,7 @@ export async function initGate() {
   if (saved && ALLOWED_EMAILS.includes(saved)) {
     gate.email = saved
     gate.status = 'approved'
+    reconnectDriveSilently()
     return
   }
   gate.status = 'signed_out'
