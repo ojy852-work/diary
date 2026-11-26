@@ -11,7 +11,7 @@
   import { prefs } from './lib/prefs.svelte'
   import { applyTheme } from './lib/theme'
   import { autoSyncIfConnected } from './lib/drive-sync.svelte'
-  import { gate, initGate, renderSignInButton } from './lib/access-gate.svelte'
+  import { gate, initGate, renderSignInButton, setKeepSignedIn } from './lib/access-gate.svelte'
 
   // runs regardless of lock state, so the lock screen also reflects the chosen theme
   $effect(() => {
@@ -105,6 +105,10 @@
         <p class="deny">{gate.email || '이 계정'}은(는) 허용되지 않았어요. 관리자에게 문의해주세요.</p>
       {:else}
         <p>초대받은 사람만 사용할 수 있어요. Google 계정으로 로그인해서 확인해주세요.</p>
+        <label class="keep">
+          <input type="checkbox" checked={gate.keepSignedIn} onchange={(e) => setKeepSignedIn(e.currentTarget.checked)} />
+          이 기기에서 로그인 상태 유지
+        </label>
       {/if}
       <div bind:this={gateBtnEl}></div>
     </div>
@@ -145,6 +149,7 @@
   .gate h1 { font-family: var(--serif); font-size: 1.2rem; margin: 0; }
   .gate p { color: var(--muted); font-size: 0.92rem; line-height: 1.5; margin: 0; }
   .gate .deny { color: var(--danger); }
+  .gate .keep { display: flex; align-items: center; gap: 0.45rem; font-size: 0.85rem; color: var(--muted); cursor: pointer; }
 
   .shell { max-width: 880px; margin: 0 auto; padding: 0 16px calc(88px + env(safe-area-inset-bottom)); }
   .top { display: flex; justify-content: space-between; align-items: center; padding: calc(0.8rem + env(safe-area-inset-top)) 0 0.7rem; border-bottom: 1px solid var(--line); margin-bottom: 0.9rem; }

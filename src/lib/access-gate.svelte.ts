@@ -9,11 +9,20 @@ import { GOOGLE_CLIENT_ID } from './drive-sync.svelte'
 import { ALLOWED_EMAILS } from './allowlist'
 
 const APPROVED_KEY = 'accessGate.approvedEmail'
+const KEEP_SIGNED_IN_KEY = 'accessGate.keepSignedIn'
 
 export const gate = $state({
   status: 'checking' as 'checking' | 'signed_out' | 'denied' | 'approved',
   email: '',
+  // whether a successful login should be remembered on this device, or asked again next time;
+  // the choice itself is remembered so the checkbox stays as the user last left it
+  keepSignedIn: localStorage.getItem(KEEP_SIGNED_IN_KEY) !== '0',
 })
+
+export function setKeepSignedIn(value: boolean) {
+  gate.keepSignedIn = value
+  localStorage.setItem(KEEP_SIGNED_IN_KEY, value ? '1' : '0')
+}
 
 function decodeIdToken(credential: string): { email?: string; email_verified?: boolean } {
   const payload = credential.split('.')[1]
@@ -29,7 +38,8 @@ function decodeIdToken(credential: string): { email?: string; email_verified?: b
 function handleCredential(credential: string) {
   const { email, email_verified } = decodeIdToken(credential)
   if (email && email_verified && ALLOWED_EMAILS.includes(email)) {
-    localStorage.setItem(APPROVED_KEY, email)
+    if (gate.keepSignedIn) localStorage.setItem(APPROVED_KEY, email)
+    else localStorage.removeItem(APPROVED_KEY)
     gate.email = email
     gate.status = 'approved'
   } else {
