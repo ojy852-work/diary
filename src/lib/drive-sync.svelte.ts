@@ -146,6 +146,7 @@ export function disconnect() {
   if (accessToken) window.google?.accounts?.oauth2?.revoke(accessToken, () => {})
   accessToken = null
   localStorage.removeItem(CONNECTED_KEY)
+  localStorage.removeItem(AUTO_SYNC_COOLDOWN_KEY)
   driveSync.status = 'disconnected'
   driveSync.error = ''
 }
@@ -189,9 +190,29 @@ export async function syncNow() {
   }
 }
 
+// Google's "silent" token request (prompt: '') still flashes a real, if brief, popup window
+// in many browser setups (third-party-cookie restrictions, installed PWA windows, ...) — there
+// is no truly invisible way to refresh it. Requesting a fresh one on every single unlock made
+// that popup reappear every time the app was reopened, which is exactly the "반복적으로 팝업"
+// the user asked to stop. So a brand new token is only fetched at most once per cooldown
+// window; in between, sync just uses whatever token is already cached in memory (if any),
+// and otherwise quietly does nothing rather than popping up again.
+const AUTO_SYNC_COOLDOWN_KEY = 'driveSync.lastAutoAttempt'
+const AUTO_SYNC_COOLDOWN_MS = 24 * 60 * 60 * 1000
+
 /** Call once after unlocking, if the user connected Drive before, to sync without asking again. */
 export async function autoSyncIfConnected() {
   if (!driveSync.configured || !wasConnected()) return
+  if (!accessToken) {
+    const last = Number(localStorage.getItem(AUTO_SYNC_COOLDOWN_KEY) || 0)
+    if (Date.now() - last < AUTO_SYNC_COOLDOWN_MS) {
+      // still within the cooldown and no live token to reuse: skip silently instead of
+      // popping up again. The "지금 동기화" button in Settings can always force one.
+      driveSync.status = 'connected'
+      return
+    }
+    localStorage.setItem(AUTO_SYNC_COOLDOWN_KEY, String(Date.now()))
+  }
   driveSync.status = 'connecting'
   try {
     await ensureToken(false)

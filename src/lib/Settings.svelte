@@ -5,8 +5,14 @@
   import PwInput from './PwInput.svelte'
   import InfoTip from './InfoTip.svelte'
   import { driveSync, connect as connectDrive, disconnect as disconnectDrive, syncNow as driveSyncNow } from './drive-sync.svelte'
+  import { gate, signOut } from './access-gate.svelte'
 
   let { autoLock = $bindable() }: { autoLock: number } = $props()
+
+  function doSignOut() {
+    if (!confirm('Google 계정에서 로그아웃할까요? 이 기기의 일기 자체는 지워지지 않지만, 다시 열려면 Google 로그인을 다시 해야 해요.')) return
+    signOut()
+  }
 
   let msg = $state('')
   let err = $state('')
@@ -215,6 +221,10 @@
     <p class="muted small">안전한 곳에 적어두세요. 이 화면을 벗어나면 다시 볼 수 없어요.</p>
   {/if}
   <button class="full" onclick={lock}>지금 잠그기</button>
+  {#if gate.email}
+    <p class="muted small signedInAs">{gate.email}(으)로 로그인됨</p>
+    <button class="full ghost" onclick={doSignOut}>Google 계정 로그아웃</button>
+  {/if}
 </section>
 
 <section class="card">
@@ -250,6 +260,7 @@
   .inline { display: flex; align-items: center; gap: 0.8rem; white-space: nowrap; }
   .inline select { width: auto; }
   .full { width: 100%; }
+  .signedInAs { text-align: center; margin-top: 0.8rem; margin-bottom: 0.2rem; }
   .check { display: flex; gap: 0.5rem; align-items: center; margin: 0.4rem 0; }
   .check input { width: auto; }
   ul { padding-left: 1.2rem; margin: 0.3rem 0; }
