@@ -13,6 +13,10 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # `if:` can't read `secrets` directly (GitHub restriction) — a job-level env var that
+    # copies the secret's presence works around that for the step below.
+    env:
+      HAS_ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -29,7 +33,7 @@ jobs:
       - run: npm run build:single
       - run: npx cap sync android
       - name: Write Android signing keystore
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        if: ${{ env.HAS_ANDROID_KEYSTORE == 'true' }}
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
           cat > android/keystore.properties <<EOF
