@@ -61,27 +61,36 @@ async function loadEntries(k: CryptoKey) {
   for (const e of out) entries.set(e.date, e)
 }
 
-/** First run: creates the vault and returns the recovery code to show the user once. */
-export async function setup(password: string): Promise<string> {
+/**
+ * If this device has no local vault yet, seeds it from a Drive backup (still encrypted,
+ * same as it was written) so the next screen asks for the EXISTING password instead of
+ * offering to create a brand new diary. No-ops if a local vault already exists here.
+ */
+export async function seedFromRemote(file: BackupFile): Promise<boolean> {
+  if (await db.getMeta()) return false
+  if (file?.format !== 'mannyeon-backup') return false
+  await db.putMeta(file.vault)
+  await db.putEntries(file.entries)
+  return true
+}
+
+/**
+ * First run: creates the vault and unlocks it right away. No recovery code is generated
+ * here anymore — get one anytime from Settings (regenerateRecoveryCode) once you're in.
+ */
+export async function setup(password: string): Promise<void> {
   const raw = c.randomBytes(32)
-  const recoveryCode = c.makeRecoveryCode()
   const meta: VaultMeta = {
     version: 1,
     createdAt: Date.now(),
     password: await c.wrapDek(raw, password),
-    recovery: await c.wrapDek(raw, recoveryCode),
   }
   await db.putMeta(meta)
   key = await c.importDek(raw)
   sessionPassword = password
   raw.fill(0)
   entries.clear()
-  // status stays 'setup' until the user confirms they saved the recovery code
-  return recoveryCode
-}
-
-export function finishSetup() {
-  if (key) vault.status = 'unlocked'
+  vault.status = 'unlocked'
 }
 
 /** The editor registers a function here so unsaved text is written before locking. */
@@ -107,7 +116,7 @@ export async function unlock(password: string): Promise<boolean> {
 /** Forgot password: the recovery code unlocks and sets a new password. */
 export async function recover(code: string, newPassword: string): Promise<boolean> {
   const meta = await db.getMeta()
-  if (!meta) return false
+  if (!meta?.recovery) return false
   let raw: Uint8Array<ArrayBuffer>
   try {
     raw = await c.unwrapDek(meta.recovery, c.normalizeRecoveryCode(code))
@@ -122,6 +131,38 @@ export async function recover(code: string, newPassword: string): Promise<boolea
   await loadEntries(key)
   vault.status = 'unlocked'
   return true
+}
+
+/** Re-proves the current password, then issues a brand new recovery code and retires the
+ *  old one. Lets the user get a fresh code any time from Settings, instead of only once at
+ *  setup — without ever storing the plaintext code anywhere. */
+export async function regenerateRecoveryCode(password: string): Promise<string | null> {
+  const meta = await db.getMeta()
+  if (!meta) return null
+  let raw: Uint8Array<ArrayBuffer>
+  try {
+    raw = await c.unwrapDek(meta.password, password)
+  } catch {
+    return null
+  }
+  const code = c.makeRecoveryCode()
+  meta.recovery = await c.wrapDek(raw, code)
+  raw.fill(0)
+  await db.putMeta(meta)
+  return code
+}
+
+/** Checks a password against the current vault without unlocking or changing anything. */
+export async function verifyPassword(password: string): Promise<boolean> {
+  const meta = await db.getMeta()
+  if (!meta) return false
+  try {
+    const raw = await c.unwrapDek(meta.password, password)
+    raw.fill(0)
+    return true
+  } catch {
+    return false
+  }
 }
 
 export async function changePassword(oldPw: string, newPw: string): Promise<boolean> {

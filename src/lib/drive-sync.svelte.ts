@@ -11,7 +11,9 @@ import { loadGis } from './google-identity'
 // authorized JavaScript origins on Google's side, so it's fine to commit once you have one.
 export const GOOGLE_CLIENT_ID = '778725502188-q0nn4uo7a2o6ob062pu0iolm3p3509jf.apps.googleusercontent.com'
 
-const SCOPE = 'https://www.googleapis.com/auth/drive.appdata'
+// "email" is included so the same consent/token that unlocks Drive can also tell us who
+// signed in (used by the access gate) — one Google popup covers both needs.
+const SCOPE = 'https://www.googleapis.com/auth/drive.appdata email'
 const FILE_NAME = 'mannyeon-diary-sync.json'
 const CONNECTED_KEY = 'driveSync.connected'
 const LAST_SYNCED_KEY = 'driveSync.lastSynced'
@@ -46,10 +48,19 @@ function requestToken(interactive: boolean): Promise<string> {
   })
 }
 
-async function ensureToken(interactive: boolean): Promise<string> {
+// Google's popup can fail to open (blocked, rate-limited, no network) without ever calling
+// back, which would otherwise leave callers stuck on "연결하는 중…" forever.
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('Google 응답이 없었어요. 잠시 후 다시 시도해주세요.')), ms)),
+  ])
+}
+
+export async function ensureToken(interactive: boolean): Promise<string> {
   await loadGis()
   if (accessToken) return accessToken
-  accessToken = await requestToken(interactive)
+  accessToken = await withTimeout(requestToken(interactive), interactive ? 20_000 : 8_000)
   return accessToken
 }
 
@@ -88,6 +99,33 @@ async function uploadFile(token: string, id: string | null, content: BackupFile)
           `--mannyeon\r\nContent-Type: application/json\r\n\r\n${body}\r\n--mannyeon--`,
       })
   if (!res.ok) throw new Error(`Drive에 올리지 못했어요 (${res.status})`)
+}
+
+/** Reads the remote backup as-is (still encrypted), without needing the diary password.
+ *  Used by the access gate to seed a brand-new device before it ever asks for a password. */
+export async function fetchRemoteBackup(token: string): Promise<BackupFile | null> {
+  const remote = await findRemoteFile(token)
+  if (!remote) return null
+  return downloadRemoteFile(token, remote.id)
+}
+
+/** Marks Drive as connected without going through connect()'s own token request — used when
+ *  the access gate already obtained a token (with the same scopes) as part of signing in. */
+export function markConnectedWithToken(token: string) {
+  accessToken = token
+  localStorage.setItem(CONNECTED_KEY, '1')
+  driveSync.status = 'connected'
+}
+
+/** Permanently deletes the remote backup for this account, so the next sign-in (on any
+ *  device) starts a clean slate instead of pulling down this file. Used by the "start over"
+ *  escape hatch when a device's local vault is unusable and the remote copy is too. */
+export async function deleteRemoteBackup(): Promise<void> {
+  const token = await ensureToken(false)
+  const remote = await findRemoteFile(token)
+  if (!remote) return
+  const res = await driveFetch(token, `https://www.googleapis.com/drive/v3/files/${remote.id}`, { method: 'DELETE' })
+  if (!res.ok && res.status !== 404) throw new Error(`Drive 파일을 삭제하지 못했어요 (${res.status})`)
 }
 
 export async function connect() {

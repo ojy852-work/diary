@@ -5,7 +5,9 @@ export interface VaultMeta {
   version: 1
   createdAt: number
   password: WrappedKey
-  recovery: WrappedKey
+  // absent until the user asks for one from Settings (regenerateRecoveryCode) — setup no
+  // longer forces a "write this down" step before the diary can be used
+  recovery?: WrappedKey
 }
 
 export interface EncryptedEntry extends Sealed {
