@@ -10,6 +10,7 @@
 import { ensureToken, fetchRemoteBackup, markConnectedWithToken, disconnect as disconnectDrive, GOOGLE_CLIENT_ID } from './drive-sync.svelte'
 import { seedFromRemote, lock } from './vault.svelte'
 import { ALLOWED_EMAILS } from './allowlist'
+import { isNative, nativeSignIn, nativeSignOut } from './native-google-auth'
 
 const APPROVED_KEY = 'accessGate.approvedEmail'
 const KEEP_SIGNED_IN_KEY = 'accessGate.keepSignedIn'
@@ -42,16 +43,36 @@ export async function signIn() {
   gate.busy = true
   gate.error = ''
   try {
-    // ensureToken itself times out if the popup never opens/responds, so this never hangs
-    const token = await ensureToken(true)
-    const { email, email_verified } = await fetchEmail(token)
-    if (email && email_verified && ALLOWED_EMAILS.includes(email)) {
-      markConnectedWithToken(token)
-      try {
-        const remote = await fetchRemoteBackup(token)
-        if (remote) await seedFromRemote(remote)
-      } catch {
-        // best-effort only: if this fails the device just falls back to "새로 만들기" as before
+    // The Android app signs in natively (Credential Manager) since Google refuses this flow
+    // from inside an embedded WebView; the website uses the Google Identity Services popup.
+    // Both converge on the same email/verified/driveToken shape below.
+    let email: string | undefined
+    let emailVerified: boolean
+    let driveToken: string | null
+    if (isNative) {
+      const r = await nativeSignIn()
+      email = r.email
+      emailVerified = r.emailVerified
+      driveToken = r.accessToken
+    } else {
+      // ensureToken itself times out if the popup never opens/responds, so this never hangs
+      const token = await ensureToken(true)
+      const info = await fetchEmail(token)
+      email = info.email
+      emailVerified = !!info.email_verified
+      driveToken = token
+    }
+    if (email && emailVerified && ALLOWED_EMAILS.includes(email)) {
+      // on native, driveToken is usually null for now (see native-google-auth.ts) — Drive
+      // sync just stays off until that gets its own native scope request
+      if (driveToken) {
+        markConnectedWithToken(driveToken)
+        try {
+          const remote = await fetchRemoteBackup(driveToken)
+          if (remote) await seedFromRemote(remote)
+        } catch {
+          // best-effort only: if this fails the device just falls back to "새로 만들기" as before
+        }
       }
       if (gate.keepSignedIn) localStorage.setItem(APPROVED_KEY, email)
       else localStorage.removeItem(APPROVED_KEY)
@@ -91,6 +112,7 @@ export async function initGate() {
  *  still guards the data — this only ends how this device reaches the gate). */
 export async function signOut() {
   localStorage.removeItem(APPROVED_KEY)
+  if (isNative) await nativeSignOut()
   disconnectDrive()
   await lock()
   gate.email = ''
